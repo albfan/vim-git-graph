@@ -50,7 +50,7 @@ endfunction
 function! GlogGraph(showAll)
   silent! wincmd P
   if !&previewwindow
-    execute 'bo ' . &previewheight . ' new'
+    execute 'aboveleft ' . 20 . ' new'
     set previewwindow
   endif
 
@@ -88,8 +88,7 @@ function! OpenCommit()
   if commitwinnr != -1
     call GotoWin(commitwinnr)
   else
-    bo new
-    file __Commit__
+    call NewWindow(0, "__Commit__")
   endif
   execute "silent %delete_"
   
@@ -101,6 +100,27 @@ function! OpenCommit()
 
   map <buffer> <Enter> :call OpenRealFile(0)<CR>
   map <buffer> <S-Enter> :call OpenRealFile(1)<CR>
+endfunction
+
+" forceSplit:
+"    0 no
+"    1 horizontal
+"    2 vertical
+function! NewWindow(forceSplit, name)
+  let avaliable_windows = map(filter(range(0, bufnr('$')), 'bufwinnr(v:val)>=0 && buflisted(v:val)'), 'bufwinnr(v:val)')
+  let open_command = "edit"
+  if a:forceSplit || empty(avaliable_windows)
+    if a:forceSplit > 1
+      wincmd k
+      let open_command = "vertical leftabove vsplit"
+    else
+      let open_command = "split"
+    endif
+  else
+    let winnr = get(avaliable_windows, 0)
+    exe winnr . "wincmd w"
+    exe "file " . a:name
+  endif
 endfunction
 
 function! OpenRealFile(openFrom)
