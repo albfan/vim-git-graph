@@ -39,15 +39,23 @@ function! Foldtext() abort
   return foldtext()
 endfunction
 
+function! Glogs()
+  call GlogGraph(0, 1)
+endfunction
+
+function! Glogsa()
+  call GlogGraph(1, 1)
+endfunction
+
 function! Glogga()
-  call GlogGraph(1)
+  call GlogGraph(1, 0)
 endfunction
 
 function! Glogg()
-  call GlogGraph(0)
+  call GlogGraph(0, 0)
 endfunction
 
-function! GlogGraph(showAll)
+function! GlogGraph(showAll, simplify)
   silent! wincmd P
   if !&previewwindow
     execute 'aboveleft ' . 20 . ' new'
@@ -58,12 +66,14 @@ function! GlogGraph(showAll)
   
   setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted nowrap
 
-  let all = ""
+  let git_log_command = ["git", "log", "--decorate", "--graph", "--oneline", "--color=always"]
   if a:showAll
-    let all = " --all"
+    call add(git_log_command, "--all")
   endif
-  let git_log_command = "git log --decorate --graph --oneline --color=always" . all
-  execute "silent 0read !". git_log_command
+  if a:simplify
+    call add(git_log_command, "--simplify-by-decoration")
+  endif
+  execute "silent 0read !". join(git_log_command, " ")
 
   set nowrap
   if !AnsiEsc#IsAnsiEscEnabled(bufnr("%"))
@@ -173,6 +183,8 @@ endfunction
 
 command! Glogg :call Glogg()
 command! Glogga :call Glogga()
+command! Glogs :call Glogs()
+command! Glogsa :call Glogsa()
 
 augroup gitgraph_foldtext
   autocmd!
