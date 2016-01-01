@@ -56,13 +56,15 @@ function! Glogg()
 endfunction
 
 function! GlogGraph(showAll, simplify)
-  silent! wincmd P
-  if !&previewwindow
-    execute 'aboveleft ' . 20 . ' new'
-    set previewwindow
+  let winnr = bufwinnr("__LogGraph__")
+  if winnr != -1
+    call GotoWin(winnr)
+  else
+    call NewWindow(0, "__LogGraph__", ['__Commit__', '__DirDiff__', '__CommitFile__'])
   endif
+  set modifiable
 
-  execute "silent %delete_"
+  silent execute "silent %delete_"
   
   setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted nowrap
 
@@ -73,9 +75,9 @@ function! GlogGraph(showAll, simplify)
   if a:simplify
     call add(git_log_command, "--simplify-by-decoration")
   endif
-  execute "silent 0read !". join(git_log_command, " ")
+  silent execute "silent 0read !". join(git_log_command, " ")
 
-  exe "file __LogGraph__"
+  silent exe "file __LogGraph__"
 
   set nowrap
   if !AnsiEsc#IsAnsiEscEnabled(bufnr("%"))
@@ -213,17 +215,17 @@ function! NewWindow(forceSplit, name, excluded)
   else
     let winnr = get(match_window, 0)
   endif
-  let open_command = "edit"
   if a:forceSplit || winnr == 0
     if a:forceSplit > 1
       wincmd k
-      let open_command = "vertical leftabove vsplit"
+      let open_command = "vertical leftabove new"
     else
-      let open_command = "split"
+      let open_command = "new"
     endif
+    exe open_command
   else
-    exe winnr . "wincmd w"
-    exe "file " . a:name
+    silent exe winnr . "wincmd w"
+    silent exe "file " . a:name
   endif
 endfunction
 
