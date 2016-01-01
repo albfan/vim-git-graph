@@ -86,6 +86,7 @@ function! GlogGraph(showAll, simplify)
   normal 1G
   map <buffer> <Enter> :call Open()<CR>
   map <buffer> <Space> :call SetMark()<CR>
+  set nomodifiable
 endfunction
 
 function! Open()
@@ -128,6 +129,7 @@ function! OpenDirDiff()
   else
     call NewWindow(0, "__DirDiff__", ['__LogGraph__', '__Commit__'])
   endif
+  set modifiable
   execute "silent %delete_"
   
   setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted nowrap
@@ -178,8 +180,9 @@ function! OpenCommit()
   if commitwinnr != -1
     call GotoWin(commitwinnr)
   else
-    call NewWindow(0, "__Commit__", ['__LogGraph__', '__DirDiff__'])
+    call NewWindow(0, "__Commit__", ['__LogGraph__', '__DirDiff__', '__CommitFile__'])
   endif
+  set modifiable
   execute "silent %delete_"
   
   setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted nowrap
