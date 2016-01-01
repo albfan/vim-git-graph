@@ -90,13 +90,14 @@ endfunction
 
 function! Open()
   let line = line('.')
-   if !exists('g:line') || g:line == line('.')
+   if !exists('b:line') || b:line == line('.')
       call clearmatches()
       call OpenCommit()
    else
       call OpenDirDiff()
    endif
 endfunction
+
 function! GotoWin(winnr) 
   let cmd = type(a:winnr) == type(0) ? a:winnr . 'wincmd w'
                                      \ : 'wincmd ' . a:winnr
@@ -106,16 +107,16 @@ endfunction
 function! SetMark()
   let line = line('.')
   call clearmatches() 
-  if exists('g:line') && g:line == line
-    unlet g:line
+  if exists('b:line') && b:line == line
+    unlet b:line
     return
   endif
-  let g:line = line
-  call matchadd('Todo', '\%'.g:line.'l')
+  let b:line = line
+  call matchadd('Todo', '\%'.b:line.'l')
 endfunction
 
 function! OpenDirDiff()
-  let line1 = getline(g:line)
+  let line1 = getline(b:line)
   let line2 = getline(".")
   let commit1 = substitute(line1, '.*\*\s\+\e[.\{-}m\(.\{-}\)\e.*', '\1', "g")  
   let commit2 = substitute(line2, '.*\*\s\+\e[.\{-}m\(.\{-}\)\e.*', '\1', "g")  
@@ -134,34 +135,34 @@ function! OpenDirDiff()
   execute "silent 0read !git ls-tree -r --name-only" commit1
 
   let pos = 0
-  let g:folded = [-1]
+  let b:folded = [-1]
   for i in systemlist("git diff --name-status " . commit1 . " " . commit2)
     let statusline = split(i, '\t')
     let pos += 1
     while pos < line('$')
       if getline(pos) == statusline[1]
-        call add(g:folded, 0)
+        call add(b:folded, 0)
         call setline(pos, getline(pos) . " (" . statusline[0] . ")")
         break
       else
-        call add(g:folded, 1)
+        call add(b:folded, 1)
       endif
       let pos += 1
     endwhile
   endfor
   while pos < line('$')
-    call add(g:folded, 1)
+    call add(b:folded, 1)
     let pos += 1
   endwhile
-  set foldexpr=g:folded[v:lnum]
+  set foldexpr=b:folded[v:lnum]
   set foldmethod=expr
 
   map <buffer> <Enter> :call OpenDirDiffFile(commit1, commit2, line('.'))<CR>
   set nomodifiable
 endfunction
 
-function OpenDifDiffFile(commit1, commit2, lnum)
-  if g:folded[lnum] == 0
+function! OpenDifDiffFile(commit1, commit2, lnum)
+  if b:folded[lnum] == 0
      "modified, open diff
 
   else
