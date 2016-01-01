@@ -192,10 +192,10 @@ function! OpenCommit()
   set foldmethod=syntax
 
   "TODO: commit file should be opened
-  map <buffer> r :call OpenRealFile(commit, 0)<CR>
-  map <buffer> R :call OpenRealFile(commit, 1)<CR>
-  map <buffer> r :call OpenCommitFile(commit, 0)<CR>
-  map <buffer> R :call OpenCommitFile(commit, 1)<CR>
+  exe "map <buffer> r :call OpenShowFile('".commit."', 1, 1)<CR>"
+  exe "map <buffer> R :call OpenShowFile('".commit."', 0, 1)<CR>"
+  exe "map <buffer> c :call OpenShowFile('".commit."', 1, 0)<CR>"
+  exe "map <buffer> C :call OpenShowFile('".commit."', 0, 0)<CR>"
   set nomodifiable
 endfunction
 
@@ -233,9 +233,10 @@ function! NewWindow(forceSplit, name, excluded)
   endif
 endfunction
 
-function! OpenRealFile(commit, openFrom)
+function! OpenShowFile(commit, openFrom, workdir)
   let lnum = line(".")
   let selectedLnum = lnum
+  let b:parents = [a:commit."^"]
   while lnum > 0
     let line = getline(lnum)
     if line =~# '^diff --git \%(a/.*\|/dev/null\) \%(b/.*\|/dev/null\)'
@@ -249,12 +250,24 @@ function! OpenRealFile(commit, openFrom)
             echom "file created: no from-file"
           else
             let noprefixfromfile = substitute(fromfile, 'a/', '', '')
-            if !filereadable(noprefixfromfile)
-              echom "file " . noprefixfromfile . ": not exists"
+            if a:workdir
+              if !filereadable(noprefixfromfile)
+                echom "file " . noprefixfromfile . ": not exists"
+              else
+                exe "vsplit " . noprefixfromfile
+                if exists('fromline')
+                  exe  "normal " . fromline . "G"
+                endif
+              endif
             else
-              exe "vsplit " . noprefixfromfile
-              if exists('fromline')
-                exe  "normal " . fromline . "G"
+              if len(b:parents) == 1
+                call OpenCommitFile(b:parents[0], noprefixfromfile)
+              else
+                let commitpos = inputdialog(map(copy(b:parents), "v:key+1.'. '.v:val"))
+                if commitpos > 0
+                  let parent_commit = b:parents[commitpos-1]
+                  call OpenCommitFile(parent_commit, noprefixfromfile)
+                endif
               endif
             endif
           endif
@@ -264,13 +277,17 @@ function! OpenRealFile(commit, openFrom)
             echom "file deleted: no to-file"
           else
             let noprefixtofile = substitute(tofile, 'b/', '', '')
-            if !filereadable(noprefixtofile)
-              echom "file " . noprefixtofile . ": not exists"
-            else
-              exe "vsplit " . noprefixtofile
-              if exists('toline')
-                exe "normal " . toline . "G"
+            if a:workdir
+              if !filereadable(noprefixtofile)
+                echom "file " . noprefixtofile . ": not exists"
+              else
+                exe "vsplit " . noprefixtofile
+                if exists('toline')
+                  exe "normal " . toline . "G"
+                endif
               endif
+            else
+              call OpenCommitFile(a:commit,noprefixtofile)
             endif
           endif
         endif
@@ -286,9 +303,30 @@ function! OpenRealFile(commit, openFrom)
         let fromline += offsetline
         let toline += offsetline
       endif
+    elseif line =~# "^Merge: "
+      let b:parents = split(substitute(line, "^Merge: ")," ")
     endif
     let lnum -= 1
   endwhile
+endfunction
+
+function! OpenCommitFile(commit, filename)
+
+  "Open in another buffer (always same place)
+  let commitwinnr = bufwinnr("__CommitFile__")
+  if commitwinnr != -1
+    call GotoWin(commitwinnr)
+  else
+    call NewWindow(0, "__CommitFile__", ['__LogGraph__', '__DirDiff__', '__Commit__'])
+  endif
+  set modifiable
+  execute "silent %delete_"
+  
+  setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted nowrap
+
+  execute "silent 0read !git show " . a:commit . ":" . a:filename
+  execute "set filetype=". substitute(a:filename, '^.*\.', '', '')
+  set nomodifiable
 endfunction
 
 command! Glogg :call Glogg()
