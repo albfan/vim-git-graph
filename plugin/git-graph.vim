@@ -62,7 +62,7 @@ function! GlogGraph(showAll, simplify)
   else
     call NewWindow(0, "__LogGraph__", ['__Commit__', '__DirDiff__', '__CommitFile__'])
   endif
-  set modifiable
+  setlocal modifiable
 
   silent execute "silent %delete_"
   
@@ -86,7 +86,7 @@ function! GlogGraph(showAll, simplify)
   normal 1G
   map <buffer> <Enter> :call Open()<CR>
   map <buffer> <Space> :call SetMark()<CR>
-  set nomodifiable
+  setlocal nomodifiable
 endfunction
 
 function! Open()
@@ -129,7 +129,7 @@ function! OpenDirDiff()
   else
     call NewWindow(0, "__DirDiff__", ['__LogGraph__', '__Commit__'])
   endif
-  set modifiable
+  setlocal modifiable
   execute "silent %delete_"
   
   setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted nowrap
@@ -160,7 +160,7 @@ function! OpenDirDiff()
   set foldmethod=expr
 
   map <buffer> <Enter> :call OpenDirDiffFile(commit1, commit2, line('.'))<CR>
-  set nomodifiable
+  setlocal nomodifiable
 endfunction
 
 function! OpenDifDiffFile(commit1, commit2, lnum)
@@ -182,7 +182,7 @@ function! OpenCommit()
   else
     call NewWindow(0, "__Commit__", ['__LogGraph__', '__DirDiff__', '__CommitFile__'])
   endif
-  set modifiable
+  setlocal modifiable
   execute "silent %delete_"
   
   setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted nowrap
@@ -196,7 +196,7 @@ function! OpenCommit()
   exe "map <buffer> R :call OpenShowFile('".commit."', 0, 1)<CR>"
   exe "map <buffer> c :call OpenShowFile('".commit."', 1, 0)<CR>"
   exe "map <buffer> C :call OpenShowFile('".commit."', 0, 0)<CR>"
-  set nomodifiable
+  setlocal nomodifiable
 endfunction
 
 " forceSplit:
@@ -319,14 +319,14 @@ function! OpenCommitFile(commit, filename)
   else
     call NewWindow(0, "__CommitFile__", ['__LogGraph__', '__DirDiff__', '__Commit__'])
   endif
-  set modifiable
+  setlocal modifiable
   execute "silent %delete_"
   
   setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted nowrap
 
   execute "silent 0read !git show " . a:commit . ":" . a:filename
   execute "set filetype=". substitute(a:filename, '^.*\.', '', '')
-  set nomodifiable
+  setlocal nomodifiable
 endfunction
 
 command! Glogg :call Glogg()
