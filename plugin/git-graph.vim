@@ -229,8 +229,8 @@ function! NewWindow(forceSplit, name, excluded)
     exe open_command
   else
     silent exe winnr . "wincmd w"
-    silent exe "file " . a:name
   endif
+  silent exe "file " . a:name
 endfunction
 
 function! OpenShowFile(commit, openFrom, workdir)
