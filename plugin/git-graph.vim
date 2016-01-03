@@ -163,16 +163,24 @@ function! OpenDirDiff()
   set foldexpr=b:folded[v:lnum]
   set foldmethod=expr
 
-  map <buffer> <Enter> :call OpenDirDiffFile(commit1, commit2, line('.'))<CR>
+  exe "map <buffer> <Enter> :call OpenDirDiffFile('".commit1."', '".commit2."', line('.'))<CR>"
   setlocal nomodifiable
 endfunction
 
-function! OpenDifDiffFile(commit1, commit2, lnum)
-  if b:folded[lnum] == 0
-     "modified, open diff
-
+function! OpenDirDiffFile(commit1, commit2, lnum)
+  let filename = split(getline(a:lnum))[0]
+  if b:folded[a:lnum] == 0
+    call OpenDiff(filename, a:commit1, a:commit2) 
   else
-     "can dest file
+    call OpenFile(filename)
+  endif
+endfunction
+
+function OpenDiff(filename, commit1, commit2)
+  call OpenCommitFile(a:commit1, a:filename, 1)
+  diffthis
+  call OpenCommitFile(a:commit2, a:filename, 1)
+  diffthis
 endfunction
 
 function GetCommitSHA(line)
@@ -210,6 +218,16 @@ function! OpenCommit()
   exe "map <buffer> c :call OpenShowFile('".commit."', 1, 0)<CR>"
   exe "map <buffer> C :call OpenShowFile('".commit."', 0, 0)<CR>"
   setlocal nomodifiable
+endfunction
+
+function! OpenFile(filename)
+  let filewinnr = bufwinnr(a:filename)
+  if filewinnr != -1
+    call GotoWin(filewinnr)
+  else
+    call NewWindow(0, "__Commit__", ['__LogGraph__', '__DirDiff__', '__CommitFile__'])
+    normal "edit a:filename"
+  endif
 endfunction
 
 " forceSplit:
@@ -274,12 +292,12 @@ function! OpenShowFile(commit, openFrom, workdir)
               endif
             else
               if len(b:parents) == 1
-                call OpenCommitFile(b:parents[0], noprefixfromfile)
+                call OpenCommitFile(b:parents[0], noprefixfromfile, 0)
               else
                 let commitpos = inputdialog(map(copy(b:parents), "v:key+1.'. '.v:val"))
                 if commitpos > 0
                   let parent_commit = b:parents[commitpos-1]
-                  call OpenCommitFile(parent_commit, noprefixfromfile)
+                  call OpenCommitFile(parent_commit, noprefixfromfile, 0)
                 endif
               endif
             endif
@@ -300,7 +318,7 @@ function! OpenShowFile(commit, openFrom, workdir)
                 endif
               endif
             else
-              call OpenCommitFile(a:commit,noprefixtofile)
+              call OpenCommitFile(a:commit, noprefixtofile, 0)
             endif
           endif
         endif
@@ -323,18 +341,21 @@ function! OpenShowFile(commit, openFrom, workdir)
   endwhile
 endfunction
 
-function! OpenCommitFile(commit, filename)
+function! OpenCommitFile(commit, filename, newWindow)
 
-  "Open in another buffer (always same place)
-  let commitwinnr = bufwinnr("__CommitFile__")
-  if commitwinnr != -1
-    call GotoWin(commitwinnr)
+  if a:newWindow
+     vnew
   else
-    call NewWindow(0, "__CommitFile__", ['__LogGraph__', '__DirDiff__', '__Commit__'])
-  endif
-  setlocal modifiable
-  execute "silent %delete_"
-  
+    "Open in another buffer (always same place)
+    let commitwinnr = bufwinnr("__CommitFile__")
+    if commitwinnr != -1
+      call GotoWin(commitwinnr)
+    else
+      call NewWindow(0, "__CommitFile__", ['__LogGraph__', '__DirDiff__', '__Commit__'])
+    endif
+    setlocal modifiable
+    execute "silent %delete_"
+  endif 
   setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted nowrap
 
   execute "silent 0read !git show " . a:commit . ":" . a:filename
