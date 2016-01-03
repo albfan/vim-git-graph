@@ -341,3 +341,5 @@ augroup gitgraph_foldtext
         \    set foldtext=Foldtext() |
         \ endif
 augroup END
+
+autocmd BufEnter * if expand('<amatch>')==''|call fugitive#detect(getcwd())|endif
