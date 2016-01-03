@@ -80,8 +80,12 @@ function! GlogGraph(showAll, simplify)
   silent exe "file __LogGraph__"
 
   set nowrap
-  if !AnsiEsc#IsAnsiEscEnabled(bufnr("%"))
-    AnsiEsc
+  if exists(':AnsiEsc')
+    if !AnsiEsc#IsAnsiEscEnabled(bufnr("%"))
+      AnsiEsc
+    endif
+  else
+    %s/\e\[[0-9;]*[mK]//g
   endif
   normal 1G
   map <buffer> <Enter> :call Open()<CR>
@@ -119,8 +123,8 @@ endfunction
 function! OpenDirDiff()
   let line1 = getline(b:line)
   let line2 = getline(".")
-  let commit1 = substitute(line1, '.*\*\s\+\e[.\{-}m\(.\{-}\)\e.*', '\1', "g")  
-  let commit2 = substitute(line2, '.*\*\s\+\e[.\{-}m\(.\{-}\)\e.*', '\1', "g")  
+  let commit1 = GetCommitSHA(line1)
+  let commit2 = GetCommitSHA(line2)
 
   "Open in another buffer (always same place)
   let dirdiffwinnr = bufwinnr("__DirDiff__")
@@ -171,9 +175,18 @@ function! OpenDifDiffFile(commit1, commit2, lnum)
      "can dest file
 endfunction
 
+function GetCommitSHA(line)
+  if exists(":AnsiEsc")
+    let commit = substitute(a:line, '.*\*\s\+\e[.\{-}m\(.\{-}\)\e.*', '\1', "g")  
+  else
+    let commit = split(a:line, ' ')[1]  
+  endif
+  return commit
+endfunction
+
 function! OpenCommit()
   let line = getline(".")
-  let commit = substitute(line, '.*\*\s\+\e[.\{-}m\(.\{-}\)\e.*', '\1', "g")  
+  let commit = GetCommitSHA(line)
 
   "Open in another buffer (always same place)
   let commitwinnr = bufwinnr("__Commit__")
