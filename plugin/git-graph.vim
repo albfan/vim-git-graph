@@ -176,14 +176,14 @@ function! OpenDirDiffFile(commit1, commit2, lnum)
   endif
 endfunction
 
-function OpenDiff(filename, commit1, commit2)
+function! OpenDiff(filename, commit1, commit2)
   call OpenCommitFile(a:commit1, a:filename, 1)
   diffthis
   call OpenCommitFile(a:commit2, a:filename, 1)
   diffthis
 endfunction
 
-function GetCommitSHA(line)
+function! GetCommitSHA(line)
   if exists(":AnsiEsc")
     let commit = substitute(a:line, '.*\*\s\+\e[.\{-}m\(.\{-}\)\e.*', '\1', "g")  
   else
